@@ -3,10 +3,10 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS_ID = 'roseaw-dockerhub'
-        DOCKER_IMAGE = 'cithit/roseaw'                                                                    //<------change this
+        DOCKER_IMAGE = 'cithit/pyakurh2'                                                                    //<------change this
         IMAGE_TAG = "build-${BUILD_NUMBER}"
-        GITHUB_URL = 'https://github.com/miamioh-cit/lab3-6.git'                                          //<------change this
-        KUBECONFIG = credentials('roseaw-225')                                                         //<------change this
+        GITHUB_URL = 'https://github.com/HP097/225-lab3-6.git'                                          //<------change this
+        KUBECONFIG = credentials('pyakurh2-sp26')                                                         //<------change this
     }
 
     stages {
@@ -50,7 +50,7 @@ pipeline {
                     def kubeConfig = readFile(KUBECONFIG)
                     // Update deployment-dev.yaml to use the new image tag
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
-                    sh "kubectl apply -f deployment-dev.yaml"
+                    sh "kubectl apply -f deployment-dev.yaml --kubeconfig=${KUBECONFIG}"
                 }
             }
         }
@@ -75,14 +75,14 @@ pipeline {
                     //sh "ls -la"
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-prod.yaml"
                     sh "cd .."
-                    sh "kubectl apply -f deployment-prod.yaml"
+                    sh "kubectl apply -f deployment-prod.yaml --kubeconfig=${KUBECONFIG}"
                 }
             }
         }
         stage('Check Kubernetes Cluster') {
             steps {
                 script {
-                    sh "kubectl get all"
+                    sh "kubectl get all --kubeconfig=${KUBECONFIG}"
                 }
             }
         }
@@ -90,6 +90,7 @@ pipeline {
     post {
         
         success {
+            cleanWs()
             slackSend color: "good", message: "Build Completed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
         }
         unstable {
